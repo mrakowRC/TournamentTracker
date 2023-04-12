@@ -60,7 +60,7 @@
             // 
             // tournamentNameValue
             // 
-            tournamentNameValue.Location = new Point(39, 135);
+            tournamentNameValue.Location = new Point(27, 135);
             tournamentNameValue.Name = "tournamentNameValue";
             tournamentNameValue.Size = new Size(305, 35);
             tournamentNameValue.TabIndex = 10;
@@ -269,7 +269,7 @@
             Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
             Margin = new Padding(5, 6, 5, 6);
             Name = "CreateTournamentForm";
-            Text = "CreateTournamentForm";
+            Text = "Create Tournament";
             ResumeLayout(false);
             PerformLayout();
         }
