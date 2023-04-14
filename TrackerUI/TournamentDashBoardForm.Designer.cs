@@ -40,7 +40,7 @@
             headerLabel.AutoSize = true;
             headerLabel.Font = new Font("Segoe UI Light", 27.75F, FontStyle.Regular, GraphicsUnit.Point);
             headerLabel.ForeColor = SystemColors.MenuHighlight;
-            headerLabel.Location = new Point(281, 23);
+            headerLabel.Location = new Point(145, 28);
             headerLabel.Name = "headerLabel";
             headerLabel.Size = new Size(385, 50);
             headerLabel.TabIndex = 4;
@@ -49,7 +49,7 @@
             // loadExistingTournamentDropDown
             // 
             loadExistingTournamentDropDown.FormattingEnabled = true;
-            loadExistingTournamentDropDown.Location = new Point(281, 164);
+            loadExistingTournamentDropDown.Location = new Point(145, 169);
             loadExistingTournamentDropDown.Margin = new Padding(5, 6, 5, 6);
             loadExistingTournamentDropDown.Name = "loadExistingTournamentDropDown";
             loadExistingTournamentDropDown.Size = new Size(385, 38);
@@ -60,7 +60,7 @@
             loadExistingTournamentLabel.AutoSize = true;
             loadExistingTournamentLabel.Font = new Font("Segoe UI", 20.25F, FontStyle.Regular, GraphicsUnit.Point);
             loadExistingTournamentLabel.ForeColor = SystemColors.MenuHighlight;
-            loadExistingTournamentLabel.Location = new Point(315, 100);
+            loadExistingTournamentLabel.Location = new Point(179, 105);
             loadExistingTournamentLabel.Margin = new Padding(5, 0, 5, 0);
             loadExistingTournamentLabel.Name = "loadExistingTournamentLabel";
             loadExistingTournamentLabel.Size = new Size(322, 37);
@@ -75,7 +75,7 @@
             loadTournamentBtn.FlatStyle = FlatStyle.Flat;
             loadTournamentBtn.Font = new Font("Segoe UI Semibold", 15.75F, FontStyle.Bold, GraphicsUnit.Point);
             loadTournamentBtn.ForeColor = SystemColors.MenuHighlight;
-            loadTournamentBtn.Location = new Point(350, 229);
+            loadTournamentBtn.Location = new Point(214, 234);
             loadTournamentBtn.Name = "loadTournamentBtn";
             loadTournamentBtn.Size = new Size(241, 49);
             loadTournamentBtn.TabIndex = 35;
@@ -90,7 +90,7 @@
             createTournamentBtn.FlatStyle = FlatStyle.Flat;
             createTournamentBtn.Font = new Font("Segoe UI Semibold", 15.75F, FontStyle.Bold, GraphicsUnit.Point);
             createTournamentBtn.ForeColor = SystemColors.MenuHighlight;
-            createTournamentBtn.Location = new Point(336, 305);
+            createTournamentBtn.Location = new Point(200, 310);
             createTournamentBtn.Name = "createTournamentBtn";
             createTournamentBtn.Size = new Size(269, 84);
             createTournamentBtn.TabIndex = 36;
@@ -102,7 +102,7 @@
             AutoScaleDimensions = new SizeF(12F, 30F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
-            ClientSize = new Size(1371, 900);
+            ClientSize = new Size(662, 453);
             Controls.Add(createTournamentBtn);
             Controls.Add(loadTournamentBtn);
             Controls.Add(loadExistingTournamentLabel);

@@ -248,7 +248,7 @@
             AutoScaleDimensions = new SizeF(12F, 30F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
-            ClientSize = new Size(1371, 900);
+            ClientSize = new Size(947, 637);
             Controls.Add(createTournamentBtn);
             Controls.Add(deleteSelectedPlayerBtn);
             Controls.Add(deleteSelectedPrizeBtn);
