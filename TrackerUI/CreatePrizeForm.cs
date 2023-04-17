@@ -26,10 +26,9 @@ namespace TrackerUI
             {
                 PrizeModal modal = new PrizeModal(placeNumberValue.Text, placeNameTextBox.Text, prizeAmountTextBox.Text, prizePercentageTextBox.Text);
 
-                foreach (IDataConnection db in GlobalConfig.Connections)
-                {
-                    db.CreatePrize(modal);
-                }
+               
+                GlobalConfig.Connection.CreatePrize(modal);
+                
                 placeNumberValue.Text = "";
                 placeNameTextBox.Text = "";
                 prizeAmountTextBox.Text = "0";
