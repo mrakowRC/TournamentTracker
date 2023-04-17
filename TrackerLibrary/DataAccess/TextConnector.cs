@@ -17,10 +17,11 @@ namespace TrackerLibrary.DataAccess
             int currentId = prizes.OrderByDescending(x => x.Id).First().Id + 1;
             model.Id = currentId;
             prizes.Add(model);
-
-
             //convert the prizes to list<string>
             //save the list<string> to text file
+            prizes.SaveToprizeFile(PrizesFile);
+
+      
         }
     }
 }
