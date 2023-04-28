@@ -14,6 +14,8 @@ namespace TrackerLibrary.DataAccess
         private const string PeopleFile = "PersonModals.csv";
         private const string TeamFile = "TeamModals.csv";
         private const string TournamentFile = "TournamentsModals.csv";
+        private const string MatchupFile = "MatchupModals.csv";
+        private const string MatchupEntryFile = "MatchupEntryModal.csv";
         public PrizeModal CreatePrize(PrizeModal model)
         {
             List<PrizeModal> prizes = PrizesFile.FullFilePath().LoadFile().ConvertToPrizeModals();
@@ -99,6 +101,9 @@ namespace TrackerLibrary.DataAccess
             }
 
             modal.Id = currentId;
+
+            modal.SaveRoundsToFile(MatchupFile, MatchupEntryFile);
+
             tournaments.Add(modal);
 
             tournaments.SaveToTournamentFile(TournamentFile);

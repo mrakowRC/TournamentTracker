@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TrackerLibrary.Models;
 
@@ -59,7 +61,6 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-
         public static void SaveToprizeFile(this List<PrizeModal> models, string fileName) 
         {
             List<string> lines = new List<string>();
@@ -71,7 +72,6 @@ namespace TrackerLibrary.DataAccess.TextHelpers
 
             File.WriteAllLines(fileName.FullFilePath(), lines);
         }
-
 
         public static void SaveToPeopleFile(this List<PersonModal> models, string fileName)
         {
@@ -141,6 +141,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             List<TournamentModal> output = new List<TournamentModal>();
             List<TeamModel> teams = teamFileName.FullFilePath().LoadFile().ConvertToTeamModals(peopleFileName);
             List<PrizeModal> prizes = prizeFileName.FullFilePath().LoadFile().ConvertToPrizeModals();
+            List<MatchupModal> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModals();
             foreach (string line in lines) 
             {
                 string[] cols = line.Split(',');
@@ -158,14 +159,26 @@ namespace TrackerLibrary.DataAccess.TextHelpers
                     tm.EnteredTeams.Add(teams.Where(x => x.Id == int.Parse(id)).First());
                 }
                 string[] prizeIds = cols[4].Split('|');
-
-                foreach (string id in prizeIds)
+                if (cols[4].Length > 0)
                 {
-                    tm.Prizes.Add(prizes.Where(x => x.Id == int.Parse(id)).First());
+                    foreach (string id in prizeIds)
+                    {
+                        tm.Prizes.Add(prizes.Where(x => x.Id == int.Parse(id)).First());
+                    }
                 }
-
-                //TODO - Capture Rounds info
-
+                
+                //Capture Rounds info
+                string[] rounds = cols[5].Split('|');
+                foreach (string round in rounds)
+                {
+                    string[] msText = round.Split('^');
+                    List<MatchupModal> ms = new List<MatchupModal>();
+                    foreach (string matchupModalTextId in msText)
+                    {
+                        ms.Add(matchups.Where(x => x.Id == int.Parse(matchupModalTextId)).First());
+                    }
+                    tm.Rounds.Add(ms);
+                }
                 output.Add(tm);
             }
             return output;
@@ -242,6 +255,214 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             foreach (MatchupModal m in matchups)
             {
                 output += $"{m.Id}^";
+
+            }
+            output = output.Substring(0, output.Length - 1);
+            return output;
+        }
+
+        public static void SaveRoundsToFile(this TournamentModal modal, string matchupFile, string matchupEntryFile)
+        {
+            foreach (List<MatchupModal> round in modal.Rounds)
+            {
+                foreach (MatchupModal matchup in round)
+                {
+                    matchup.SaveMatchupToFile(matchupFile, matchupEntryFile);
+
+                }
+            }
+        }
+
+        public static void SaveMatchupToFile(this MatchupModal matchup, string matchupFile, string matchupEntryFile)
+        {
+            List<MatchupModal> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModals();
+
+            int currentId = 1;
+
+            if (matchups.Count > 0)
+            {
+                currentId = matchups.OrderByDescending(x => x.Id).First().Id + 1;
+            }
+
+            matchup.Id = currentId;
+
+            matchups.Add(matchup);
+
+            foreach (MatchupEntryModal entry in matchup.Entries)
+            {
+                entry.SaveEntryToFile(matchupEntryFile);
+            }
+
+            //save to file
+            List <string>lines = new List<string>();
+
+            foreach (MatchupModal m in matchups)
+            {
+                string winner = "";
+                if (m.Winner != null)
+                {
+                    winner = m.Winner.Id.ToString();
+                }
+                lines.Add($"{m.Id},{ConvertMatchupEntryListToString(m.Entries)},{winner},{m.MatchupRound}");
+            }
+            File.WriteAllLines(GlobalConfig.MatchupFile.FullFilePath(), lines);
+        }
+
+        public static void SaveEntryToFile(this MatchupEntryModal entry, string matchupEntryFile)
+        {
+            List<MatchupEntryModal> entries = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupEntryModals();
+
+            int currentId = 1;
+
+            if (entries.Count > 0)
+            {
+                currentId = entries.OrderByDescending(x => x.Id).First().Id + 1;
+            }
+
+            entry.Id = currentId;
+            entries.Add(entry);
+
+            List<string> lines = new List<string>();
+
+            foreach (MatchupEntryModal e in entries)
+            {
+                string parent = "";
+                if (e.ParentMatchup != null)
+                {
+                    parent = e.ParentMatchup.Id.ToString();
+                }
+                string team = "";
+                if (e.TeamCompeting != null)
+                {
+                    team = e.TeamCompeting.Id.ToString();
+                }
+                lines.Add($"{e.Id},{team},{e.Score},{parent}");
+            }
+            File.WriteAllLines(GlobalConfig.MatchupEntryFile.FullFilePath(), lines);
+
+        }
+
+        public static List<MatchupModal> ConvertToMatchupModals(this List<string> lines)
+        {
+            List<MatchupModal> output = new List<MatchupModal>();
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                MatchupModal m = new MatchupModal();
+                m.Id = int.Parse(cols[0]);
+                m.Entries = ConvertStringToMatchupEntryModal(cols[1]);
+                if (cols[2].Length == 0)
+                {
+                    m.Winner = null;
+                }
+                else 
+                {
+                    m.Winner = LookupTeamById(int.Parse(cols[2]));
+                }
+                m.MatchupRound = int.Parse(cols[3]);
+                output.Add(m);
+            }
+            return output;
+        }
+
+        public static List<MatchupEntryModal> ConvertToMatchupEntryModals(this List<string> lines)
+        {
+            List<MatchupEntryModal> output = new List<MatchupEntryModal>();
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                MatchupEntryModal m = new MatchupEntryModal();
+                m.Id = int.Parse(cols[0]);
+                if (cols[1].Length == 0)
+                {
+                    m.TeamCompeting = null;
+                }
+                else 
+                {
+                    m.TeamCompeting = LookupTeamById(int.Parse(cols[1]));
+                }
+                m.Score = double.Parse(cols[2]);
+                int parentId = 0;
+                if (int.TryParse(cols[3], out parentId))
+                {
+                    m.ParentMatchup = LookupMatchupById(parentId);
+                }
+                else 
+                {
+                    m.ParentMatchup = null;
+                }
+               
+                output.Add(m);
+            }
+            return output;
+        }
+
+        private static List<MatchupEntryModal> ConvertStringToMatchupEntryModal(string input)
+        {
+            string[] ids = input.Split('|');
+            List<MatchupEntryModal> output = new List<MatchupEntryModal>();
+            List<string> entries = GlobalConfig.MatchupEntryFile.FullFilePath().LoadFile();
+            List<string> matchingEntries = new List<string>();
+
+            foreach (string id in ids) 
+            {
+                foreach (string entry in entries) 
+                {
+                    string[] cols = entry.Split(',');
+                    if (cols[0] == id)
+                    {
+                        matchingEntries.Add(entry);
+                    }
+                }
+            }
+            output = matchingEntries.ConvertToMatchupEntryModals();
+
+            return output;
+        }
+
+        private static TeamModel LookupTeamById(int id)
+        {
+            List<string> teams = GlobalConfig.TeamFile.FullFilePath().LoadFile();
+            foreach(string team in teams) 
+            {
+                string[] cols = team.Split(",");
+                if (cols[0] == id.ToString())
+                {
+                    List<string> matchingTeams = new List<string>();
+                    matchingTeams.Add(team);
+                    return matchingTeams.ConvertToTeamModals(GlobalConfig.PeopleFile).First();
+                }
+            }
+            return null;
+        }
+
+        private static MatchupModal LookupMatchupById(int id)
+        {
+            List<string> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile();
+            foreach (string matchup in matchups)
+            {
+                string[] cols = matchup.Split(",");
+                if (cols[0] == id.ToString())
+                { 
+                    List<string > matchingMatchups = new List<string>();
+                    matchingMatchups.Add(matchup);
+                    return matchingMatchups.ConvertToMatchupModals().First();
+                }
+            }
+            return null;
+        }
+
+        private static string ConvertMatchupEntryListToString(List<MatchupEntryModal> entries)
+        {
+            string output = "";
+            if (entries.Count == 0)
+            {
+                return "";
+            }
+
+            foreach (MatchupEntryModal me in entries)
+            {
+                output += $"{me.Id}|";
 
             }
             output = output.Substring(0, output.Length - 1);
