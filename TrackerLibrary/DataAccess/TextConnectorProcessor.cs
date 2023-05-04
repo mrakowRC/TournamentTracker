@@ -61,7 +61,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-        public static void SaveToprizeFile(this List<PrizeModal> models, string fileName) 
+        public static void SaveToprizeFile(this List<PrizeModal> models) 
         {
             List<string> lines = new List<string>();
 
@@ -70,10 +70,10 @@ namespace TrackerLibrary.DataAccess.TextHelpers
                 lines.Add($"{p.Id},{p.PlaceNumber},{p.PlaceName},{p.PrizeAmount},{p.PrizePercentage}");
             }
 
-            File.WriteAllLines(fileName.FullFilePath(), lines);
+            File.WriteAllLines(GlobalConfig.PrizesFile.FullFilePath(), lines);
         }
 
-        public static void SaveToPeopleFile(this List<PersonModal> models, string fileName)
+        public static void SaveToPeopleFile(this List<PersonModal> models)
         {
             List <string> lines = new List<string>();
             foreach (PersonModal p in models)
@@ -81,13 +81,13 @@ namespace TrackerLibrary.DataAccess.TextHelpers
                 lines.Add($"{p.Id},{p.FirstName},{p.LastName},{p.EmailAddress},{p.CellPhoneNumber}");
             }
 
-            File.WriteAllLines(fileName.FullFilePath(), lines);
+            File.WriteAllLines(GlobalConfig.PeopleFile.FullFilePath(), lines);
         }
 
-        public static List<TeamModel> ConvertToTeamModals(this List<string> lines, string peopleFileName)
+        public static List<TeamModel> ConvertToTeamModals(this List<string> lines)
         {
             List<TeamModel> output = new List<TeamModel>();
-            List<PersonModal> people = peopleFileName.FullFilePath().LoadFile().ConvertToPersonModals();
+            List<PersonModal> people = GlobalConfig.PeopleFile.FullFilePath().LoadFile().ConvertToPersonModals();
 
             foreach (string line in lines)
             { 
@@ -108,7 +108,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-        public static void SaveToTeamFile(this List<TeamModel> models, string fileName)
+        public static void SaveToTeamFile(this List<TeamModel> models)
         {
             List<string> lines = new List<string>();
 
@@ -116,7 +116,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             {
                 lines.Add($"{t.Id},{t.TeamName},{ConvertPeopleListToString(t.TeamMembers)}");
             }
-            File.WriteAllLines(fileName.FullFilePath(), lines);
+            File.WriteAllLines(GlobalConfig.TeamFile.FullFilePath(), lines);
         }
 
         private static string ConvertPeopleListToString(List<PersonModal> people)
@@ -136,11 +136,11 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-        public static List<TournamentModal> ConvertToTournamentsModels(this List<string> lines, string teamFileName, string peopleFileName, string prizeFileName)
+        public static List<TournamentModal> ConvertToTournamentsModels(this List<string> lines)
         {
             List<TournamentModal> output = new List<TournamentModal>();
-            List<TeamModel> teams = teamFileName.FullFilePath().LoadFile().ConvertToTeamModals(peopleFileName);
-            List<PrizeModal> prizes = prizeFileName.FullFilePath().LoadFile().ConvertToPrizeModals();
+            List<TeamModel> teams = GlobalConfig.TeamFile.FullFilePath().LoadFile().ConvertToTeamModals();
+            List<PrizeModal> prizes = GlobalConfig.PrizesFile.FullFilePath().LoadFile().ConvertToPrizeModals();
             List<MatchupModal> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModals();
             foreach (string line in lines) 
             {
@@ -184,14 +184,14 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-        public static void SaveToTournamentFile(this List<TournamentModal> modals, string fileName)
+        public static void SaveToTournamentFile(this List<TournamentModal> modals)
         {
             List<string> lines = new List<string>();
             foreach (TournamentModal tm in modals)
             {
                 lines.Add($"{tm.Id},{tm.TournamentName},{tm.EntryFee},{ConvertTeamListToString(tm.EnteredTeams)},{ConvertPrizeListToString(tm.Prizes)},{ConvertRoundListToString(tm.Rounds)}");
             }
-            File.WriteAllLines(fileName.FullFilePath(), lines);
+            File.WriteAllLines(GlobalConfig.TournamentFile.FullFilePath(), lines);
         }
 
         private static string ConvertTeamListToString(List<TeamModel> teams)
@@ -261,19 +261,19 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             return output;
         }
 
-        public static void SaveRoundsToFile(this TournamentModal modal, string matchupFile, string matchupEntryFile)
+        public static void SaveRoundsToFile(this TournamentModal modal)
         {
             foreach (List<MatchupModal> round in modal.Rounds)
             {
                 foreach (MatchupModal matchup in round)
                 {
-                    matchup.SaveMatchupToFile(matchupFile, matchupEntryFile);
+                    matchup.SaveMatchupToFile();
 
                 }
             }
         }
 
-        public static void SaveMatchupToFile(this MatchupModal matchup, string matchupFile, string matchupEntryFile)
+        public static void SaveMatchupToFile(this MatchupModal matchup)
         {
             List<MatchupModal> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModals();
 
@@ -290,7 +290,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
 
             foreach (MatchupEntryModal entry in matchup.Entries)
             {
-                entry.SaveEntryToFile(matchupEntryFile);
+                entry.SaveEntryToFile();
             }
 
             //save to file
@@ -308,7 +308,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             File.WriteAllLines(GlobalConfig.MatchupFile.FullFilePath(), lines);
         }
 
-        public static void SaveEntryToFile(this MatchupEntryModal entry, string matchupEntryFile)
+        public static void SaveEntryToFile(this MatchupEntryModal entry)
         {
             List<MatchupEntryModal> entries = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupEntryModals();
 
@@ -430,7 +430,7 @@ namespace TrackerLibrary.DataAccess.TextHelpers
                 {
                     List<string> matchingTeams = new List<string>();
                     matchingTeams.Add(team);
-                    return matchingTeams.ConvertToTeamModals(GlobalConfig.PeopleFile).First();
+                    return matchingTeams.ConvertToTeamModals().First();
                 }
             }
             return null;
@@ -467,6 +467,77 @@ namespace TrackerLibrary.DataAccess.TextHelpers
             }
             output = output.Substring(0, output.Length - 1);
             return output;
+        }
+
+        public static void UpdateMatchupToFile(this MatchupModal matchup)
+        {
+            List<MatchupModal> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModals();
+
+            MatchupModal oldMatchup = new MatchupModal();
+            foreach(MatchupModal m in matchups) 
+            {
+                if (matchup.Id == matchup.Id)
+                {
+                    oldMatchup = m;
+                }
+            }
+            matchups.Remove(oldMatchup);
+
+            matchups.Add(matchup);
+
+            foreach (MatchupEntryModal entry in matchup.Entries)
+            {
+                entry.UpdateEntryToFile();
+            }
+
+            //save to file
+            List<string> lines = new List<string>();
+
+            foreach (MatchupModal m in matchups)
+            {
+                string winner = "";
+                if (m.Winner != null)
+                {
+                    winner = m.Winner.Id.ToString();
+                }
+                lines.Add($"{m.Id},{ConvertMatchupEntryListToString(m.Entries)},{winner},{m.MatchupRound}");
+            }
+            File.WriteAllLines(GlobalConfig.MatchupFile.FullFilePath(), lines);
+        }
+
+        public static void UpdateEntryToFile(this MatchupEntryModal entry)
+        {
+            List<MatchupEntryModal> entries = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupEntryModals();
+            MatchupEntryModal oldEntry = new MatchupEntryModal();
+
+            foreach (MatchupEntryModal e in entries)
+            {
+                if (e.Id == entry.Id)
+                {
+                    oldEntry = e;
+                }
+            }
+
+            entries.Add(entry);
+
+            List<string> lines = new List<string>();
+
+            foreach (MatchupEntryModal e in entries)
+            {
+                string parent = "";
+                if (e.ParentMatchup != null)
+                {
+                    parent = e.ParentMatchup.Id.ToString();
+                }
+                string team = "";
+                if (e.TeamCompeting != null)
+                {
+                    team = e.TeamCompeting.Id.ToString();
+                }
+                lines.Add($"{e.Id},{team},{e.Score},{parent}");
+            }
+            File.WriteAllLines(GlobalConfig.MatchupEntryFile.FullFilePath(), lines);
+
         }
     }
 }

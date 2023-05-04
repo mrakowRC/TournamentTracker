@@ -81,6 +81,7 @@
             loadTournamentBtn.TabIndex = 35;
             loadTournamentBtn.Text = "Load Tournament";
             loadTournamentBtn.UseVisualStyleBackColor = true;
+            loadTournamentBtn.Click += loadTournamentBtn_Click;
             // 
             // createTournamentBtn
             // 
@@ -96,6 +97,7 @@
             createTournamentBtn.TabIndex = 36;
             createTournamentBtn.Text = "Create Tournament";
             createTournamentBtn.UseVisualStyleBackColor = true;
+            createTournamentBtn.Click += createTournamentBtn_Click;
             // 
             // TournamentDashBoardForm
             // 

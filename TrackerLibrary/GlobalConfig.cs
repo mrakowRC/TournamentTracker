@@ -17,9 +17,7 @@ namespace TrackerLibrary
         public const string MatchupFile = "MatchupModals.csv";
         public const string MatchupEntryFile = "MatchupEntryModal.csv";
 
-        public static IDataConnection Connection { get; private set; } 
-
-
+        public static IDataConnection Connection { get; private set; }
 
         public static void InitializeConnections(DatabaseType db)
         {
@@ -37,9 +35,16 @@ namespace TrackerLibrary
             }
         }
 
-        public static string CnnString(string name) 
+        public static string CnnString(string name)
         {
             return ConfigurationManager.ConnectionStrings[name].ConnectionString;
         }
+
+        public static string AppKeyLookup(string key)
+        {
+            return ConfigurationManager.AppSettings[key];
+
+        }
     }
 }
+

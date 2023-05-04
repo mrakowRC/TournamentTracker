@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TrackerLibrary.Models;
 
@@ -13,9 +14,8 @@ namespace TrackerLibrary.DataAccess
 {
     public class SqlConnector : IDataConnection
     {
-
         private const string db = "Tournaments";
-        public PrizeModal CreatePrize(PrizeModal model)
+        public void CreatePrize(PrizeModal model)
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
             {
@@ -29,12 +29,10 @@ namespace TrackerLibrary.DataAccess
                 connection.Execute("dbo.spPrizes_Insert", p, commandType: CommandType.StoredProcedure);
 
                 model.Id = p.Get<int>("@id");
-
-                return model;
             }
         }
 
-        public PersonModal CreatePerson(PersonModal model) 
+        public void CreatePerson(PersonModal model)
         {
 
             using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
@@ -49,8 +47,6 @@ namespace TrackerLibrary.DataAccess
                 connection.Execute("dbo.spPeople_Insert", p, commandType: CommandType.StoredProcedure);
 
                 model.Id = p.Get<int>("@id");
-
-                return model;
             }
 
         }
@@ -65,7 +61,7 @@ namespace TrackerLibrary.DataAccess
             return output;
         }
 
-        public TeamModel CreateTeam(TeamModel model)
+        public void CreateTeam(TeamModel model)
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
             {
@@ -85,13 +81,10 @@ namespace TrackerLibrary.DataAccess
 
                     connection.Execute("dbo.spTeamMembers_Insert", p, commandType: CommandType.StoredProcedure);
                 }
-
-                return model;
             }
         }
-
-        public List<TeamModel> GetTeam_All() 
-        { 
+        public List<TeamModel> GetTeam_All()
+        {
             List<TeamModel> output;
             using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
             {
@@ -106,7 +99,6 @@ namespace TrackerLibrary.DataAccess
             }
             return output;
         }
-
         public void CreateTournament(TournamentModal model)
         {
             using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
@@ -114,12 +106,14 @@ namespace TrackerLibrary.DataAccess
                 SaveTournament(connection, model);
                 SaveTournamentPrizes(connection, model);
                 SaveTournamentEntries(connection, model);
-                SaveTournamentRounds(connection,model);
+                SaveTournamentRounds(connection, model);
+
+                TournamentLodgic.UpdateTournamentResults(model);
             }
 
         }
 
-        private void SaveTournament(IDbConnection connection, TournamentModal model) 
+        private void SaveTournament(IDbConnection connection, TournamentModal model)
         {
             var p = new DynamicParameters();
             p.Add("@TournamentName", model.TournamentName);
@@ -188,16 +182,131 @@ namespace TrackerLibrary.DataAccess
                         {
                             p.Add("@TeamCompetingId", null);
                         }
-                        else 
+                        else
                         {
                             p.Add("@TeamCompetingId", entry.TeamCompeting.Id);
                         }
-                        
+
                         p.Add("@id", 0, dbType: DbType.Int32, direction: ParameterDirection.Output);
 
                         connection.Execute("dbo.spMatchupEntries_Insert", p, commandType: CommandType.StoredProcedure);
                     }
                 }
+            }
+        }
+
+        public List<TournamentModal> GetTournament_All()
+        {
+            List<TournamentModal> output;
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
+            {
+                output = connection.Query<TournamentModal>("dbo.spTournaments_GetAll").ToList();
+
+                var p = new DynamicParameters();
+
+                foreach (TournamentModal t in output)
+                {
+                    p = new DynamicParameters();
+                    p.Add("@TournamentId", t.Id);
+                    t.Prizes = connection.Query<PrizeModal>("dbo.spPrizes_GetByTournament").ToList();
+
+                    p = new DynamicParameters();
+                    p.Add("@TournamentId", t.Id);
+                    t.EnteredTeams = connection.Query<TeamModel>("dbo.spTeam_GetByTournament").ToList();
+
+                    foreach (TeamModel team in t.EnteredTeams)
+                    {
+                        p = new DynamicParameters();
+                        p.Add("@TeamId", team.Id);
+                        team.TeamMembers = connection.Query<PersonModal>("dbo.spTeamMembers_GetByTeam", p, commandType: CommandType.StoredProcedure).ToList();
+                    }
+
+                    p.Add("@TournamentId", t.Id);
+
+                    List<MatchupModal> matchups = connection.Query<MatchupModal>("dbo.spMatchups_GetByTournament", p, commandType: CommandType.StoredProcedure).ToList();
+
+                    foreach (MatchupModal m in matchups)
+                    {
+                        p = new DynamicParameters();
+                        p.Add("@MatchupId", m.Id);
+
+                        m.Entries = connection.Query<MatchupEntryModal>("dbo.spMatchupEntries_GetByMatchup", p, commandType: CommandType.StoredProcedure).ToList();
+
+                        List<TeamModel> allTeams = GetTeam_All();
+
+                        if (m.WinnerId > 0)
+                        {
+                            m.Winner = allTeams.Where(x => x.Id == m.WinnerId).First();
+                        }
+
+                        foreach (var me in m.Entries)
+                        {
+                            if (me.TeamCompetingId > 0)
+                            {
+                                me.TeamCompeting = allTeams.Where(x => x.Id == me.TeamCompetingId).First();
+                            }
+
+                            if (me.ParentMatchupId > 0)
+                            {
+                                me.ParentMatchup = matchups.Where(x => x.Id == me.ParentMatchupId).First();
+                            }
+                        }
+                    }
+                    List<MatchupModal>currentRow =new List<MatchupModal>();
+                    int currentRound = 1;
+                    foreach(MatchupModal m in matchups) 
+                    {
+                        if (m.MatchupRound > currentRound)
+                        {
+                            t.Rounds.Add(currentRow);
+                            currentRow = new List<MatchupModal>();
+                            currentRound += 1;
+                        }
+                        currentRow.Add(m);
+                    }
+                    t.Rounds.Add(currentRow);
+                }
+            }
+            return output;
+        }
+
+        public void UpdateMatchup(MatchupModal model)
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
+            {
+                if (model.Winner != null) 
+                {
+                    var p = new DynamicParameters();
+                    p.Add("@id", model.Id);
+                    p.Add("@WinnerId", model.WinnerId);
+
+                    connection.Execute("dbo.spMatchups_Update", p, commandType: CommandType.StoredProcedure);
+                }
+                
+                foreach (MatchupEntryModal me in model.Entries)
+                {
+                    if (me.TeamCompeting != null) 
+                    {
+                       var p = new DynamicParameters();
+                        p.Add("@id", me.Id);
+                        p.Add("@TeamCompetingId", me.TeamCompeting.Id);
+                        p.Add("@Score", me.Score);
+
+                        connection.Execute("dbo.spMatchupEntries_Update", p, commandType: CommandType.StoredProcedure);
+                    }
+                   
+                }
+            }
+        }
+
+        public void CompleteTournament(TournamentModal model)
+        {
+            using (IDbConnection connection = new SqlConnection(GlobalConfig.CnnString(db)))
+            {
+                var p = new DynamicParameters();
+                p.Add("@id", model.Id);
+               
+                connection.Execute("dbo.spTournaments_Complete", p, commandType: CommandType.StoredProcedure);
             }
         }
     }

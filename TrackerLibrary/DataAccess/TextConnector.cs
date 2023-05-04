@@ -5,20 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using TrackerLibrary.Models;
 using TrackerLibrary.DataAccess.TextHelpers;
+using System.Reflection;
 
 namespace TrackerLibrary.DataAccess
 {
     public class TextConnector : IDataConnection
     {
-        private const string PrizesFile = "PrizeModals.csv";
-        private const string PeopleFile = "PersonModals.csv";
-        private const string TeamFile = "TeamModals.csv";
-        private const string TournamentFile = "TournamentsModals.csv";
-        private const string MatchupFile = "MatchupModals.csv";
-        private const string MatchupEntryFile = "MatchupEntryModal.csv";
-        public PrizeModal CreatePrize(PrizeModal model)
+        public void CreatePrize(PrizeModal model)
         {
-            List<PrizeModal> prizes = PrizesFile.FullFilePath().LoadFile().ConvertToPrizeModals();
+            List<PrizeModal> prizes = GlobalConfig.PrizesFile.FullFilePath().LoadFile().ConvertToPrizeModals();
 
             int currentId = 1;
 
@@ -33,15 +28,12 @@ namespace TrackerLibrary.DataAccess
 
             //convert the prizes to list<string>
             //save the list<string> to text file
-            prizes.SaveToprizeFile(PrizesFile);
-
-            return model;
-
+            prizes.SaveToprizeFile();
         }
 
-        public PersonModal CreatePerson(PersonModal model)
+        public void CreatePerson(PersonModal model)
         {
-            List<PersonModal> people = PeopleFile.FullFilePath().LoadFile().ConvertToPersonModals();
+            List<PersonModal> people = GlobalConfig.PeopleFile.FullFilePath().LoadFile().ConvertToPersonModals();
 
             int currentId = 1;
 
@@ -54,19 +46,17 @@ namespace TrackerLibrary.DataAccess
 
             people.Add(model);
 
-            people.SaveToPeopleFile(PeopleFile);
-
-            return model;
+            people.SaveToPeopleFile();
         }
 
         public List<PersonModal> GetPerson_All()
         {
-            return PeopleFile.FullFilePath().LoadFile().ConvertToPersonModals();
+            return GlobalConfig.PeopleFile.FullFilePath().LoadFile().ConvertToPersonModals();
         }
 
-        public TeamModel CreateTeam(TeamModel model)
+        public void CreateTeam(TeamModel model)
         {
-            List<TeamModel> teams = TeamFile.FullFilePath().LoadFile().ConvertToTeamModals(PeopleFile);
+            List<TeamModel> teams = GlobalConfig.TeamFile.FullFilePath().LoadFile().ConvertToTeamModals();
             int currentId = 1;
 
             if (teams.Count > 0)
@@ -78,20 +68,17 @@ namespace TrackerLibrary.DataAccess
 
             teams.Add(model);
 
-            teams.SaveToTeamFile(TeamFile);
-
-            return model;
-
+            teams.SaveToTeamFile();
         }
 
         public List<TeamModel> GetTeam_All() 
         {
-           return TeamFile.FullFilePath().LoadFile().ConvertToTeamModals(PeopleFile);
+           return GlobalConfig.TeamFile.FullFilePath().LoadFile().ConvertToTeamModals();
         }
 
         public void CreateTournament(TournamentModal modal)
         {
-            List<TournamentModal> tournaments = TournamentFile.FullFilePath().LoadFile().ConvertToTournamentsModels(TeamFile, PeopleFile, PrizesFile);
+            List<TournamentModal> tournaments = GlobalConfig.TournamentFile.FullFilePath().LoadFile().ConvertToTournamentsModels();
 
             int currentId = 1;
 
@@ -102,12 +89,34 @@ namespace TrackerLibrary.DataAccess
 
             modal.Id = currentId;
 
-            modal.SaveRoundsToFile(MatchupFile, MatchupEntryFile);
+            modal.SaveRoundsToFile();
 
             tournaments.Add(modal);
 
-            tournaments.SaveToTournamentFile(TournamentFile);
+            tournaments.SaveToTournamentFile();
 
+            TournamentLodgic.UpdateTournamentResults(modal);
+        }
+
+        public List<TournamentModal> GetTournament_All()
+        {
+            return GlobalConfig.TournamentFile.FullFilePath().LoadFile().ConvertToTournamentsModels();
+        }
+
+        public void UpdateMatchup(MatchupModal model)
+        {
+            model.UpdateMatchupToFile();
+        }
+
+        public void CompleteTournament(TournamentModal model)
+        {
+            List<TournamentModal> tournaments = GlobalConfig.TournamentFile.FullFilePath().LoadFile().ConvertToTournamentsModels();
+
+            tournaments.Remove(model);
+
+            tournaments.SaveToTournamentFile();
+
+            TournamentLodgic.UpdateTournamentResults(model);
         }
     }
 }

@@ -31,7 +31,7 @@
             headerLabel = new Label();
             tournamentNameLabel = new Label();
             roundsLabel = new Label();
-            selectTeamDropDown = new ComboBox();
+            roundDropDown = new ComboBox();
             unplayedCheckBox = new CheckBox();
             matchupListBox = new ListBox();
             teamOneLabel = new Label();
@@ -54,7 +54,6 @@
             headerLabel.Size = new Size(214, 50);
             headerLabel.TabIndex = 2;
             headerLabel.Text = "Tournament:";
-            headerLabel.Click += headerLabel_Click;
             // 
             // tournamentNameLabel
             // 
@@ -79,16 +78,16 @@
             roundsLabel.Size = new Size(94, 37);
             roundsLabel.TabIndex = 10;
             roundsLabel.Text = "Round";
-            roundsLabel.Click += label1_Click;
             // 
-            // selectTeamDropDown
+            // roundDropDown
             // 
-            selectTeamDropDown.FormattingEnabled = true;
-            selectTeamDropDown.Location = new Point(125, 101);
-            selectTeamDropDown.Margin = new Padding(5, 6, 5, 6);
-            selectTeamDropDown.Name = "selectTeamDropDown";
-            selectTeamDropDown.Size = new Size(270, 38);
-            selectTeamDropDown.TabIndex = 15;
+            roundDropDown.FormattingEnabled = true;
+            roundDropDown.Location = new Point(125, 101);
+            roundDropDown.Margin = new Padding(5, 6, 5, 6);
+            roundDropDown.Name = "roundDropDown";
+            roundDropDown.Size = new Size(270, 38);
+            roundDropDown.TabIndex = 15;
+            roundDropDown.SelectedIndexChanged += roundDropDown_SelectedIndexChanged;
             // 
             // unplayedCheckBox
             // 
@@ -103,6 +102,7 @@
             unplayedCheckBox.TabIndex = 16;
             unplayedCheckBox.Text = "Unplayed Only";
             unplayedCheckBox.UseVisualStyleBackColor = true;
+            unplayedCheckBox.CheckedChanged += unplayedCheckBox_CheckedChanged;
             // 
             // matchupListBox
             // 
@@ -115,6 +115,7 @@
             matchupListBox.Name = "matchupListBox";
             matchupListBox.Size = new Size(374, 302);
             matchupListBox.TabIndex = 19;
+            matchupListBox.SelectedIndexChanged += matchupListBox_SelectedIndexChanged;
             // 
             // teamOneLabel
             // 
@@ -137,7 +138,6 @@
             teamOneScoreLabel.Size = new Size(82, 37);
             teamOneScoreLabel.TabIndex = 21;
             teamOneScoreLabel.Text = "Score";
-            teamOneScoreLabel.Click += label1_Click_1;
             // 
             // teamOneScoreValue
             // 
@@ -152,7 +152,6 @@
             teamTwoScoreValue.Name = "teamTwoScoreValue";
             teamTwoScoreValue.Size = new Size(111, 35);
             teamTwoScoreValue.TabIndex = 25;
-            teamTwoScoreValue.TextChanged += textBox1_TextChanged;
             // 
             // teamTwoScoreLabel
             // 
@@ -164,7 +163,6 @@
             teamTwoScoreLabel.Size = new Size(82, 37);
             teamTwoScoreLabel.TabIndex = 24;
             teamTwoScoreLabel.Text = "Score";
-            teamTwoScoreLabel.Click += label1_Click_2;
             // 
             // teamTwoLabel
             // 
@@ -176,7 +174,6 @@
             teamTwoLabel.Size = new Size(165, 37);
             teamTwoLabel.TabIndex = 23;
             teamTwoLabel.Text = "<team two>";
-            teamTwoLabel.Click += label2_Click;
             // 
             // scoreBtn
             // 
@@ -192,6 +189,7 @@
             scoreBtn.TabIndex = 26;
             scoreBtn.Text = "Score";
             scoreBtn.UseVisualStyleBackColor = true;
+            scoreBtn.Click += scoreBtn_Click;
             // 
             // TournamentViewerForm
             // 
@@ -207,7 +205,7 @@
             Controls.Add(teamOneLabel);
             Controls.Add(matchupListBox);
             Controls.Add(unplayedCheckBox);
-            Controls.Add(selectTeamDropDown);
+            Controls.Add(roundDropDown);
             Controls.Add(roundsLabel);
             Controls.Add(tournamentNameLabel);
             Controls.Add(headerLabel);
@@ -224,7 +222,7 @@
         private Label headerLabel;
         private Label tournamentNameLabel;
         private Label roundsLabel;
-        private ComboBox selectTeamDropDown;
+        private ComboBox roundDropDown;
         private CheckBox unplayedCheckBox;
         private ListBox matchupListBox;
         private Label teamOneLabel;
